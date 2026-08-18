@@ -89,6 +89,24 @@ async def create_qris(order_id: str, amount: int) -> QrisTransaction:
     )
 
 
+async def simulate_payment(order_id: str, amount: int) -> bool:
+    """Trigger Pakasir Payment Simulation (khusus project Sandbox). Testing only."""
+    url = f"{config.PAKASIR_BASE_URL}/api/paymentsimulation"
+    payload = {
+        "project": config.PAKASIR_PROJECT,
+        "order_id": order_id,
+        "amount": amount,
+        "api_key": config.PAKASIR_API_KEY,
+    }
+    session = _get_session()
+    async with session.post(url, json=payload) as resp:
+        text = await resp.text()
+        if resp.status >= 400:
+            log.warning("Pakasir simulate_payment (%s): %s", resp.status, text)
+            return False
+    return True
+
+
 async def check_status(order_id: str, amount: int) -> dict:
     """Cek detail/status transaksi. Mengembalikan dict mentah Pakasir."""
     url = f"{config.PAKASIR_BASE_URL}/api/transactiondetail"

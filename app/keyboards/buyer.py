@@ -14,6 +14,7 @@ from aiogram.types import (
     ReplyKeyboardMarkup,
 )
 
+from app import config
 from app.keyboards.common import number_buttons, pagination_row
 
 PREV = "⬅️ Sebelumnya"
@@ -94,10 +95,15 @@ def qty_kb(variant_id: int, list_page: int, qty: int, max_qty: int) -> InlineKey
 
 # ---- Inline pembayaran (di pesan foto QR) ----
 def payment_kb(order_pk: int) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup(inline_keyboard=[
+    rows = [
         [InlineKeyboardButton(text="🔄 Cek Status Bayar", callback_data=f"b:chk:{order_pk}")],
-        [InlineKeyboardButton(text="❌ Batalkan Pesanan", callback_data=f"b:cxl:{order_pk}")],
-    ])
+    ]
+    if config.SANDBOX_TESTING:
+        rows.append([InlineKeyboardButton(
+            text="🧪 Simulasikan Bayar (Testing)", callback_data=f"b:sim:{order_pk}",
+        )])
+    rows.append([InlineKeyboardButton(text="❌ Batalkan Pesanan", callback_data=f"b:cxl:{order_pk}")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 # ---- Inline pesanan saya ----

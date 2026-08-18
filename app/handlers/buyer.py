@@ -280,6 +280,44 @@ async def check_status(cb: CallbackQuery) -> None:
         await cb.answer("⏳ Pembayaran belum masuk. Coba lagi beberapa saat.", show_alert=True)
 
 
+@router.callback_query(F.data.startswith("b:sim:"))
+async def simulate_payment(cb: CallbackQuery) -> None:
+    """Tombol testing: trigger Pakasir Payment Simulation (project Sandbox saja)."""
+    if not config.SANDBOX_TESTING:
+        await cb.answer("Fitur testing nonaktif.", show_alert=True)
+        return
+    order_pk = int(cb.data.split(":")[2])
+    order = await orders_svc.get_order(order_pk)
+    if order is None or order["buyer_tg_id"] != cb.from_user.id:
+        await cb.answer("Pesanan tidak ditemukan.", show_alert=True)
+        return
+    if order["status"] != "pending":
+        await cb.answer("Pesanan ini sudah tidak pending.", show_alert=True)
+        return
+
+    ok = await pakasir.simulate_payment(order["order_id"], order["total_amount"])
+    if not ok:
+        await cb.answer("Gagal memicu simulasi. Cek log / pastikan project Pakasir mode Sandbox.", show_alert=True)
+        return
+
+    tx = await pakasir.check_status(order["order_id"], order["total_amount"])
+    if not pakasir.is_completed(tx):
+        await cb.answer("Simulasi terkirim tapi status belum completed. Coba 🔄 Cek Status Bayar.", show_alert=True)
+        return
+
+    res = await orders_svc.deliver_order(order_pk, payment_method="simulasi")
+    if res is not None:
+        await notify_delivery(cb.bot, res)
+    try:
+        await cb.message.edit_caption(
+            caption="✅ <b>[TESTING] Pembayaran disimulasikan!</b>\nProduk sudah dikirim ke chat ini 👇",
+            reply_markup=None,
+        )
+    except TelegramBadRequest:
+        pass
+    await cb.answer("✅ Simulasi sukses!")
+
+
 @router.callback_query(F.data.startswith("b:cxl:"))
 async def cancel_order(cb: CallbackQuery) -> None:
     order_pk = int(cb.data.split(":")[2])

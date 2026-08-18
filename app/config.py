@@ -36,6 +36,10 @@ PAKASIR_PROJECT: str = _require("PAKASIR_PROJECT")
 PAKASIR_API_KEY: str = _require("PAKASIR_API_KEY")
 PAKASIR_BASE_URL: str = os.getenv("PAKASIR_BASE_URL", "https://app.pakasir.com").rstrip("/")
 
+# Tombol "Simulasikan Bayar" di chat buyer — HANYA untuk project Pakasir Sandbox.
+# WAJIB false/hapus sebelum project Pakasir di-set ke Production.
+SANDBOX_TESTING: bool = os.getenv("SANDBOX_TESTING", "false").strip().lower() == "true"
+
 # ---- Web server ----
 PORT: int = int(os.getenv("PORT", "8080"))
 PUBLIC_BASE_URL: str = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
